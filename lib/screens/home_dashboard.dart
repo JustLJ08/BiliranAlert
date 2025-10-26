@@ -31,7 +31,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ Important: allows gradient to extend behind the bottom nav
       extendBody: true,
       backgroundColor: Colors.transparent,
       body: _pages[_selectedIndex],
@@ -96,7 +95,6 @@ class HomeContent extends StatelessWidget {
     ];
 
     return Container(
-      // ✅ Gradient directly applied to root container
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [primaryDarkBlue, accentOrange],
@@ -105,19 +103,60 @@ class HomeContent extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        bottom: false, // ✅ Avoids pushing content up (no white gap)
+        bottom: false,
         child: Column(
           children: [
             const SizedBox(height: 20),
+
+            // --- App Title ---
             const Text(
               "BiliranAlert",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 24,
               ),
             ),
-            const SizedBox(height: 40),
+
+            const SizedBox(height: 8),
+
+            // --- NEW: About Us Section ---
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "About Us",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "BiliranAlert is your trusted disaster preparedness and "
+                    "emergency response companion. Our goal is to keep every "
+                    "resident informed, safe, and ready in times of crisis.",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // --- Feature Menu ---
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
