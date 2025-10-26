@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'safety_screen.dart';
 import 'emergency_screen.dart';
 import 'profile_screen.dart';
+import 'about_us_screen.dart';
 import 'package:biliran_alert/widgets/bottom_nav.dart';
 import 'package:biliran_alert/utils/theme.dart'; // for gradient colors
 
@@ -31,7 +32,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ Important: allows gradient to extend behind the bottom nav
       extendBody: true,
       backgroundColor: Colors.transparent,
       body: _pages[_selectedIndex],
@@ -94,20 +94,20 @@ class HomeContent extends StatelessWidget {
         },
       },
       {
-        "color": Colors.purpleAccent,
-        "icon": Icons.medical_services_rounded,
+        "color": Colors.blueAccent,
+        "icon": Icons.info_rounded,
         "title": "About Us",
-        "subtitle": "Made by Harold Abogado",
+        "subtitle": "Learn more about this app",
         "onTap": () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Opening About Us...")),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AboutUsScreen()),
           );
         },
       },
     ];
 
     return Container(
-      // ✅ Gradient directly applied to root container
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [primaryDarkBlue, accentOrange],
@@ -116,7 +116,7 @@ class HomeContent extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        bottom: false, // ✅ Avoids pushing content up (no white gap)
+        bottom: false,
         child: Column(
           children: [
             const SizedBox(height: 20),
@@ -125,10 +125,10 @@ class HomeContent extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 24,
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -177,7 +177,8 @@ class HomeContent extends StatelessWidget {
                                       Text(
                                         item["subtitle"],
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.9),
+                                          color:
+                                              Colors.white.withOpacity(0.9),
                                           fontSize: 14,
                                         ),
                                       ),
