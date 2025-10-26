@@ -31,6 +31,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ Important: allows gradient to extend behind the bottom nav
       extendBody: true,
       backgroundColor: Colors.transparent,
       body: _pages[_selectedIndex],
@@ -92,9 +93,21 @@ class HomeContent extends StatelessWidget {
           );
         },
       },
+      {
+        "color": Colors.purpleAccent,
+        "icon": Icons.medical_services_rounded,
+        "title": "About Us",
+        "subtitle": "Made by Harold Abogado",
+        "onTap": () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Opening About Us...")),
+          );
+        },
+      },
     ];
 
     return Container(
+      // ✅ Gradient directly applied to root container
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [primaryDarkBlue, accentOrange],
@@ -103,60 +116,19 @@ class HomeContent extends StatelessWidget {
         ),
       ),
       child: SafeArea(
-        bottom: false,
+        bottom: false, // ✅ Avoids pushing content up (no white gap)
         child: Column(
           children: [
             const SizedBox(height: 20),
-
-            // --- App Title ---
             const Text(
               "BiliranAlert",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 22,
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            // --- NEW: About Us Section ---
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "About Us",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "BiliranAlert is your trusted disaster preparedness and "
-                    "emergency response companion. Our goal is to keep every "
-                    "resident informed, safe, and ready in times of crisis.",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 15,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- Feature Menu ---
+            const SizedBox(height: 40),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
