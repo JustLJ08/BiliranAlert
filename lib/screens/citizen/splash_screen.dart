@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:biliran_alert/screens/auth_onboarding_screen.dart';
+import 'package:biliran_alert/screens/auth/auth_onboarding_screen.dart';
 import 'package:biliran_alert/utils/theme.dart'; // ✅ Import to access theme colors
 
 class SplashScreen extends StatefulWidget {

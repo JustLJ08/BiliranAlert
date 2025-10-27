@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "778049583253",
+    "project_id": "biliranalert",
+    "storage_bucket": "biliranalert.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:778049583253:android:ff833717bf8b581acf439c",
+        "android_client_info": {
+          "package_name": "com.example.biliran_alert"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUfTC-FabJDyYOHcUo_8R2FpnAs5p6WmQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
