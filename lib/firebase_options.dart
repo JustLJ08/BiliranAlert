@@ -46,7 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '778049583253',
     projectId: 'biliranalert',
     authDomain: 'biliranalert.firebaseapp.com',
-    storageBucket: 'biliranalert.firebasestorage.app',
+    storageBucket: 'biliranalert.appspot.com',
     measurementId: 'G-5EHCGE141P',
   );
 

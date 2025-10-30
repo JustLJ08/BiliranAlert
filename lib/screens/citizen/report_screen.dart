@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
@@ -24,6 +23,11 @@ class _ReportScreenState extends State<ReportScreen> {
   Uint8List? _webImage;
   bool _isLoading = false;
   bool _isLocating = false;
+
+  /// Cloudinary setup (use your own cloud name & unsigned preset)
+  final String cloudinaryUploadUrl =
+      "https://api.cloudinary.com/v1_1/dcqlmbxbi/image/upload";
+  final String uploadPreset = "biliran_unsigned";
 
   /// Pick image from camera or gallery
   Future<void> _pickImage(ImageSource source) async {
@@ -76,7 +80,6 @@ class _ReportScreenState extends State<ReportScreen> {
       final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
 
-      // Reverse geocoding to get address
       List<Placemark> placemarks =
           await placemarkFromCoordinates(position.latitude, position.longitude);
       Placemark place = placemarks.first;
@@ -99,7 +102,39 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isLocating = false);
   }
 
-  /// Submit report to Firebase
+  /// Upload image to Cloudinary
+  Future<String?> _uploadToCloudinary() async {
+    try {
+      final request = http.MultipartRequest('POST', Uri.parse(cloudinaryUploadUrl))
+        ..fields['upload_preset'] = uploadPreset;
+
+      if (kIsWeb) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          _webImage!,
+          filename: 'report.jpg',
+        ));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('file', _imageFile!.path));
+      }
+
+      final response = await request.send();
+      final resBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final url = RegExp(r'"secure_url":"([^"]+)"').firstMatch(resBody)?.group(1);
+        return url;
+      } else {
+        print("Cloudinary upload failed: $resBody");
+        return null;
+      }
+    } catch (e) {
+      print("Cloudinary error: $e");
+      return null;
+    }
+  }
+
+  /// Submit report to Firestore
   Future<void> _submitReport() async {
     if (_descriptionController.text.isEmpty ||
         _locationController.text.isEmpty ||
@@ -113,28 +148,20 @@ class _ReportScreenState extends State<ReportScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final fileName =
-          "incident_images/${DateTime.now().millisecondsSinceEpoch}.jpg";
-      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final imageUrl = await _uploadToCloudinary();
 
-      UploadTask uploadTask;
-      if (kIsWeb) {
-        uploadTask = storageRef.putData(_webImage!);
-      } else {
-        uploadTask = storageRef.putFile(_imageFile!);
+      if (imageUrl == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Failed to upload image.")),
+        );
+        setState(() => _isLoading = false);
+        return;
       }
-
-      final snapshot = await uploadTask.whenComplete(() {});
-      final imageUrl = await snapshot.ref.getDownloadURL();
-
-      final user = FirebaseAuth.instance.currentUser;
-      final reporterEmail = user?.email ?? 'Anonymous';
 
       await FirebaseFirestore.instance.collection('incidents').add({
         'description': _descriptionController.text.trim(),
         'location': _locationController.text.trim(),
         'image_url': imageUrl,
-        'reported_by': reporterEmail,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -194,7 +221,6 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Image Preview
               Container(
                 height: 200,
                 width: double.infinity,
@@ -208,7 +234,6 @@ class _ReportScreenState extends State<ReportScreen> {
 
               const SizedBox(height: 10),
 
-              // Camera and Gallery buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -234,7 +259,6 @@ class _ReportScreenState extends State<ReportScreen> {
 
               const SizedBox(height: 20),
 
-              // Location field + GPS button
               Row(
                 children: [
                   Expanded(

@@ -115,6 +115,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
               },
             ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Logout',
+              onPressed: _logout,
+            ),
           ],
         ),
         body: Container(
@@ -184,6 +189,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildGenderDropdown(),
 
                       const SizedBox(height: 40),
+
+                      // 🔹 Logout Button (Bottom)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(

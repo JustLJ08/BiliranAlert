@@ -18,7 +18,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Controllers for input fields
+  // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -31,16 +31,34 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   String? _selectedMunicipality = "Naval";
   String? _selectedBarangay = "Agpangi";
 
-  // Municipality and Barangay options
   final Map<String, List<String>> municipalities = {
-    "Naval": ["Agpangi", "Anislagan", "Atipolo", "Calumpang", "Cabungaan","Larazabal","Sabang","Caray-caray"],
-    "Almeria": ["Almeria", "Matanggo", "Pulang Bato", "Tabunan","Lo-ok","Jamorawon","Pili","Talahid","Caucab"],
+    "Naval": [
+      "Agpangi",
+      "Anislagan",
+      "Atipolo",
+      "Calumpang",
+      "Cabungaan",
+      "Larazabal",
+      "Sabang",
+      "Caray-caray"
+    ],
+    "Almeria": [
+      "Almeria",
+      "Matanggo",
+      "Pulang Bato",
+      "Tabunan",
+      "Lo-ok",
+      "Jamorawon",
+      "Pili",
+      "Talahid",
+      "Caucab"
+    ],
     "Biliran": ["Bato", "Burabod", "Canila", "Hugpa", "Julita"],
   };
 
-  void _navigateToPage(int pageIndex) {
+  void _navigateToPage(int index) {
     _pageController.animateToPage(
-      pageIndex,
+      index,
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
@@ -49,10 +67,13 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   // --- Sign Up Function ---
   Future<void> _signUp() async {
     try {
+      print("🟢 Starting sign up for: ${_emailController.text}");
+
       final credential = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      print("✅ Firebase Auth account created: ${credential.user?.uid}");
 
       await _firestore.collection("users").doc(credential.user!.uid).set({
         "name": _nameController.text.trim(),
@@ -65,16 +86,24 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
         "barangay": _selectedBarangay,
         "createdAt": FieldValue.serverTimestamp(),
       });
+      print("✅ User data saved to Firestore");
 
       _redirectToDashboard(_selectedRole);
     } on FirebaseAuthException catch (e) {
-      _showSnackBar(e.message ?? "Sign Up failed");
+      print("❌ FirebaseAuthException: ${e.code} - ${e.message}");
+      _showSnackBar("Auth Error: ${e.message}");
+    } catch (e, st) {
+      print("❌ General error: $e");
+      print("🪵 Stack trace: $st");
+      _showSnackBar("Unexpected error: $e");
     }
   }
 
   // --- Login Function ---
   Future<void> _login() async {
     try {
+      print("🔵 Logging in user: ${_emailController.text}");
+
       final credential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -85,16 +114,22 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
 
       if (userDoc.exists) {
         String role = userDoc['role'];
+        print("✅ Logged in successfully as $role");
         _redirectToDashboard(role);
       } else {
-        _showSnackBar("User role not found.");
+        _showSnackBar("User role not found in Firestore.");
       }
     } on FirebaseAuthException catch (e) {
-      _showSnackBar(e.message ?? "Login failed");
+      print("❌ FirebaseAuthException: ${e.code} - ${e.message}");
+      _showSnackBar("Auth Error: ${e.message}");
+    } catch (e, st) {
+      print("❌ General error: $e");
+      print("🪵 Stack trace: $st");
+      _showSnackBar("Unexpected error: $e");
     }
   }
 
-  // --- Redirection Function ---
+  // --- Redirect by Role ---
   void _redirectToDashboard(String role) {
     Widget destination;
     if (role == "admin") {
@@ -111,7 +146,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
-  // --- Show SnackBar ---
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -263,8 +297,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
               child: const Text(
                 "Don't have an account? Sign Up",
                 style: TextStyle(
-                    color: Colors.white,
-                    decoration: TextDecoration.underline),
+                    color: Colors.white, decoration: TextDecoration.underline),
               ),
             ),
           ),
@@ -300,7 +333,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 40),
 
-          // --- Name ---
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(
@@ -310,7 +342,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Email ---
           TextField(
             controller: _emailController,
             decoration: const InputDecoration(
@@ -320,7 +351,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Password ---
           TextField(
             controller: _passwordController,
             obscureText: true,
@@ -331,7 +361,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Contact ---
           TextField(
             controller: _contactController,
             keyboardType: TextInputType.phone,
@@ -342,7 +371,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Address ---
           TextField(
             controller: _addressController,
             decoration: const InputDecoration(
@@ -352,14 +380,10 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Municipality ---
           DropdownButtonFormField<String>(
             value: _selectedMunicipality,
             items: municipalities.keys
-                .map((mun) => DropdownMenuItem(
-                      value: mun,
-                      child: Text(mun),
-                    ))
+                .map((mun) => DropdownMenuItem(value: mun, child: Text(mun)))
                 .toList(),
             onChanged: (value) {
               setState(() {
@@ -374,14 +398,10 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Barangay ---
           DropdownButtonFormField<String>(
             value: _selectedBarangay,
             items: barangayList
-                .map((brgy) => DropdownMenuItem(
-                      value: brgy,
-                      child: Text(brgy),
-                    ))
+                .map((brgy) => DropdownMenuItem(value: brgy, child: Text(brgy)))
                 .toList(),
             onChanged: (value) {
               setState(() {
@@ -395,7 +415,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Gender ---
           DropdownButtonFormField<String>(
             value: _selectedGender,
             items: const [
@@ -413,13 +432,12 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Role ---
           DropdownButtonFormField<String>(
             value: _selectedRole,
             items: const [
               DropdownMenuItem(value: "admin", child: Text("Admin")),
-              DropdownMenuItem(value: "rescuer", child: Text("Rescuer")),
-              DropdownMenuItem(value: "citizen", child: Text("Citizen")),
+              DropdownMenuItem(value: "rescuer", child: Text("Respondents")),
+              DropdownMenuItem(value: "citizen", child: Text("Resident")),
             ],
             onChanged: (value) {
               setState(() => _selectedRole = value!);
@@ -431,7 +449,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 40),
 
-          // --- Sign Up Button ---
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -451,8 +468,9 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
               child: const Text(
                 "Already have an account? Login",
                 style: TextStyle(
-                    color: Colors.white,
-                    decoration: TextDecoration.underline),
+                  color: Colors.white,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ),

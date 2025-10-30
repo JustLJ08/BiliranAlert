@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'report_screen.dart';
 import 'safety_screen.dart';
-import 'emergency_screen.dart';
+import 'emergency_alerts_screen.dart';
 import 'profile_screen.dart';
 import 'about_us_screen.dart';
+import 'first_aid_guide_screen.dart';
+import 'evacuation_centers_screen.dart';
 import 'package:biliran_alert/widgets/bottom_nav.dart';
 import 'package:biliran_alert/utils/theme.dart'; // for gradient colors
 
@@ -20,7 +22,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   final List<Widget> _pages = const [
     HomeContent(),
     SafetyScreen(),
-    EmergencyScreen(),
+    EmergencyAlertsScreen(),
     ProfileScreen(),
   ];
 
@@ -56,8 +58,9 @@ class HomeContent extends StatelessWidget {
         "title": "Emergency Alerts",
         "subtitle": "View active alerts and warnings",
         "onTap": () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Opening Emergency Alerts...")),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EmergencyAlertsScreen()),
           );
         },
       },
@@ -79,8 +82,9 @@ class HomeContent extends StatelessWidget {
         "title": "Evacuation Centers",
         "subtitle": "Find nearest evacuation centers",
         "onTap": () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Opening Evacuation Centers...")),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const EvacuationCentersScreen()),
           );
         },
       },
@@ -90,8 +94,9 @@ class HomeContent extends StatelessWidget {
         "title": "First Aid Guide",
         "subtitle": "Emergency medical procedures",
         "onTap": () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Opening First Aid Guide...")),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const FirstAidGuideScreen()),
           );
         },
       },

@@ -56,8 +56,8 @@ class BottomNavBar extends StatelessWidget {
                       label: 'Safety',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.medical_services_rounded),
-                      label: 'Emergency',
+                      icon: Icon(Icons.contact_emergency_rounded),
+                      label: 'Contact',
                     ),
                     BottomNavigationBarItem(
                       icon: Icon(Icons.person_rounded),
