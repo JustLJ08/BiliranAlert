@@ -25,8 +25,18 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
 
-  String _selectedRole = "citizen"; // default role
+  // Dropdown selections
+  String _selectedRole = "citizen";
   String _selectedGender = "Male";
+  String? _selectedMunicipality = "Naval";
+  String? _selectedBarangay = "Agpangi";
+
+  // Municipality and Barangay options
+  final Map<String, List<String>> municipalities = {
+    "Naval": ["Agpangi", "Anislagan", "Atipolo", "Calumpang", "Cabungaan","Larazabal","Sabang","Caray-caray"],
+    "Almeria": ["Almeria", "Matanggo", "Pulang Bato", "Tabunan","Lo-ok","Jamorawon","Pili","Talahid","Caucab"],
+    "Biliran": ["Bato", "Burabod", "Canila", "Hugpa", "Julita"],
+  };
 
   void _navigateToPage(int pageIndex) {
     _pageController.animateToPage(
@@ -51,6 +61,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
         "address": _addressController.text.trim(),
         "contact": _contactController.text.trim(),
         "gender": _selectedGender,
+        "municipality": _selectedMunicipality,
+        "barangay": _selectedBarangay,
         "createdAt": FieldValue.serverTimestamp(),
       });
 
@@ -263,6 +275,9 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
 
   // --- Sign Up Page ---
   Widget _buildSignUpPage(BuildContext context) {
+    final selectedMunicipality = _selectedMunicipality ?? municipalities.keys.first;
+    final barangayList = municipalities[selectedMunicipality] ?? [];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -285,7 +300,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 40),
 
-          // --- Name Field ---
+          // --- Name ---
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(
@@ -295,7 +310,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Email Field ---
+          // --- Email ---
           TextField(
             controller: _emailController,
             decoration: const InputDecoration(
@@ -305,7 +320,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           ),
           const SizedBox(height: 16),
 
-          // --- Password Field ---
+          // --- Password ---
           TextField(
             controller: _passwordController,
             obscureText: true,
@@ -331,8 +346,51 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           TextField(
             controller: _addressController,
             decoration: const InputDecoration(
-              hintText: 'Address',
+              hintText: 'Street or Purok',
               prefixIcon: Icon(Icons.location_on),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // --- Municipality ---
+          DropdownButtonFormField<String>(
+            value: _selectedMunicipality,
+            items: municipalities.keys
+                .map((mun) => DropdownMenuItem(
+                      value: mun,
+                      child: Text(mun),
+                    ))
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedMunicipality = value!;
+                _selectedBarangay = municipalities[value]!.first;
+              });
+            },
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.map),
+              labelText: "Select Municipality",
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // --- Barangay ---
+          DropdownButtonFormField<String>(
+            value: _selectedBarangay,
+            items: barangayList
+                .map((brgy) => DropdownMenuItem(
+                      value: brgy,
+                      child: Text(brgy),
+                    ))
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedBarangay = value!;
+              });
+            },
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.location_city),
+              labelText: "Select Barangay",
             ),
           ),
           const SizedBox(height: 16),

@@ -20,6 +20,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
+  final TextEditingController _municipalityController = TextEditingController();
+  final TextEditingController _barangayController = TextEditingController();
+
   String _gender = "Male";
   bool _isEditing = false;
   bool _isLoading = true;
@@ -40,6 +43,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _emailController.text = doc['email'] ?? '';
           _addressController.text = doc['address'] ?? '';
           _contactController.text = doc['contact'] ?? '';
+          _municipalityController.text = doc['municipality'] ?? '';
+          _barangayController.text = doc['barangay'] ?? '';
           _gender = doc['gender'] ?? 'Male';
           _isLoading = false;
         });
@@ -56,6 +61,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       "email": _emailController.text.trim(),
       "address": _addressController.text.trim(),
       "contact": _contactController.text.trim(),
+      "municipality": _municipalityController.text.trim(),
+      "barangay": _barangayController.text.trim(),
       "gender": _gender,
       "updatedAt": FieldValue.serverTimestamp(),
     });
@@ -132,7 +139,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // --- Display Name ---
                       Text(
                         _nameController.text.isEmpty
                             ? "No Name Set"
@@ -150,7 +156,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 30),
 
-                      // --- Editable Fields ---
                       _buildEditableField(
                         controller: _nameController,
                         label: "Full Name",
@@ -160,6 +165,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _addressController,
                         label: "Address",
                         icon: Icons.location_on,
+                      ),
+                      _buildEditableField(
+                        controller: _municipalityController,
+                        label: "Municipality",
+                        icon: Icons.location_city,
+                      ),
+                      _buildEditableField(
+                        controller: _barangayController,
+                        label: "Barangay",
+                        icon: Icons.location_disabled_rounded,
                       ),
                       _buildEditableField(
                         controller: _contactController,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'report_screen.dart';
 import 'safety_screen.dart';
 import 'emergency_screen.dart';
 import 'profile_screen.dart';
@@ -62,12 +63,13 @@ class HomeContent extends StatelessWidget {
       },
       {
         "color": Colors.orangeAccent,
-        "icon": Icons.report_problem_rounded,
+        "icon": Icons.camera,
         "title": "Report Incident",
         "subtitle": "Report disasters and emergencies",
         "onTap": () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Opening Report Incident...")),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ReportScreen()),
           );
         },
       },
