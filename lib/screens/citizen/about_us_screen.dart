@@ -7,20 +7,25 @@ class AboutUsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ Ensures gradient extends under the AppBar and bottom area
+      // 🔹 Make sure gradient fills entire screen (even behind app bar)
       extendBodyBehindAppBar: true,
-      extendBody: true,
       backgroundColor: Colors.transparent,
 
       appBar: AppBar(
-        title: const Text("About Us"),
+        title: const Text(
+          "About Us",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: Container(
-        // ✅ Full gradient background
+        // 🔹 Full-screen gradient background
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [primaryDarkBlue, accentOrange],
@@ -29,10 +34,12 @@ class AboutUsScreen extends StatelessWidget {
           ),
         ),
 
+        // 🔹 Using SafeArea only for top (to keep gradient to bottom)
         child: SafeArea(
-          bottom: false, // ✅ removes bottom white line entirely
+          top: true,
+          bottom: false,
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
@@ -107,6 +114,7 @@ class AboutUsScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  SizedBox(height: 20), // Ensures no white bottom space
                 ],
               ),
             ),

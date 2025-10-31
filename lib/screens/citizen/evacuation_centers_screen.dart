@@ -1,120 +1,186 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:biliran_alert/utils/theme.dart'; // ✅ Uses your existing color theme
 
 class EvacuationCentersScreen extends StatefulWidget {
   const EvacuationCentersScreen({super.key});
 
   @override
-  State<EvacuationCentersScreen> createState() =>
-      _EvacuationCentersScreenState();
+  State<EvacuationCentersScreen> createState() => _EvacuationCentersScreenState();
 }
 
 class _EvacuationCentersScreenState extends State<EvacuationCentersScreen> {
-  LatLng? _currentPosition;
-  bool _isLoading = true;
-  Set<Marker> _markers = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadEvacuationCenters();
-  }
-
-  Future<void> _loadEvacuationCenters() async {
-    try {
-      await _determinePosition();
-
-      final querySnapshot =
-          await FirebaseFirestore.instance.collection('evacuation_centers').get();
-
-      final markers = querySnapshot.docs.map((doc) {
-        final data = doc.data();
-        return Marker(
-          markerId: MarkerId(doc.id),
-          position: LatLng(data['lat'], data['lng']),
-          infoWindow: InfoWindow(
-            title: data['name'],
-            snippet: data['address'],
-            onTap: () => _openInMaps(data['lat'], data['lng']),
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        );
-      }).toSet();
-
-      setState(() {
-        _markers = markers;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint("Error loading evacuation centers: $e");
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Check if location services are enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Location permissions are denied.');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Location permissions are permanently denied.');
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    _currentPosition = LatLng(position.latitude, position.longitude);
-  }
-
-  Future<void> _openInMaps(double lat, double lng) async {
-    final Uri url = Uri.parse("https://www.google.com/maps?q=$lat,$lng");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw Exception("Could not open the map.");
-    }
-  }
+  final List<Map<String, String>> evacuationCenters = [
+    {
+      'name': 'Naval Gymnasium',
+      'location': 'P. Inocentes St., Naval, Biliran',
+      'capacity': '500 people'
+    },
+    {
+      'name': 'Naval Central School',
+      'location': 'Santissimo Rosario St., Naval, Biliran',
+      'capacity': '350 people'
+    },
+    {
+      'name': 'BiPsu Gymnasium',
+      'location': 'Biliran Province State University, Naval, Biliran',
+      'capacity': '600 people'
+    },
+    {
+      'name': 'Brgy. Larrazabal Covered Court',
+      'location': 'Larrazabal, Naval, Biliran',
+      'capacity': '200 people'
+    },
+    {
+      'name': 'Brgy. Caraycaray Multi-purpose Hall',
+      'location': 'Caraycaray, Naval, Biliran',
+      'capacity': '250 people'
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Evacuation Centers"),
-        backgroundColor: Colors.blueAccent,
+        title: const Text(
+          "Evacuation Centers",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: primaryDarkBlue, // ✅ Matches theme
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _currentPosition == null
-              ? const Center(
-                  child: Text(
-                    "Unable to get current location.",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                )
-              : GoogleMap(
-                  onMapCreated: (controller) {
-                  },
-                  initialCameraPosition: CameraPosition(
-                    target: _currentPosition!,
-                    zoom: 13,
-                  ),
-                  myLocationEnabled: true,
-                  markers: _markers,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primaryDarkBlue, accentOrange],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: evacuationCenters.length,
+            itemBuilder: (context, index) {
+              final center = evacuationCenters[index];
+              return Card(
+                color: Colors.white.withOpacity(0.9),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                elevation: 5,
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.location_city_rounded,
+                    color: accentOrange,
+                    size: 36,
+                  ),
+                  title: Text(
+                    center['name']!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryDarkBlue,
+                      fontSize: 16,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text(
+                        center['location']!,
+                        style: TextStyle(
+                          color: Colors.grey[800],
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "Capacity: ${center['capacity']}",
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: primaryDarkBlue,
+                    size: 20,
+                  ),
+                  onTap: () {
+                    _showCenterDetails(context, center);
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCenterDetails(BuildContext context, Map<String, String> center) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            center['name']!,
+            style: const TextStyle(
+              color: primaryDarkBlue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.location_on_rounded, color: accentOrange),
+                  SizedBox(width: 8),
+                  Text("Location:"),
+                ],
+              ),
+              Text(
+                center['location']!,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: const [
+                  Icon(Icons.people_alt_rounded, color: accentOrange),
+                  SizedBox(width: 8),
+                  Text("Capacity:"),
+                ],
+              ),
+              Text(
+                center['capacity']!,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text(
+                "Close",
+                style: TextStyle(color: accentOrange, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
     );
   }
 }

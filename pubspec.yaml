@@ -1,5 +1,5 @@
 name: biliran_alert
-description: "BiliranAlert — A disaster management app to receive alerts, report incidents, and locate evacuation centers."
+description: "DasigAlert — A disaster management app to receive alerts, report incidents, and locate evacuation centers."
 publish_to: 'none'
 
 version: 1.0.0+1

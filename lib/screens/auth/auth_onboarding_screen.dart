@@ -67,13 +67,10 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   // --- Sign Up Function ---
   Future<void> _signUp() async {
     try {
-      print("🟢 Starting sign up for: ${_emailController.text}");
-
       final credential = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      print("✅ Firebase Auth account created: ${credential.user?.uid}");
 
       await _firestore.collection("users").doc(credential.user!.uid).set({
         "name": _nameController.text.trim(),
@@ -86,15 +83,11 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
         "barangay": _selectedBarangay,
         "createdAt": FieldValue.serverTimestamp(),
       });
-      print("✅ User data saved to Firestore");
 
       _redirectToDashboard(_selectedRole);
     } on FirebaseAuthException catch (e) {
-      print("❌ FirebaseAuthException: ${e.code} - ${e.message}");
       _showSnackBar("Auth Error: ${e.message}");
-    } catch (e, st) {
-      print("❌ General error: $e");
-      print("🪵 Stack trace: $st");
+    } catch (e) {
       _showSnackBar("Unexpected error: $e");
     }
   }
@@ -102,8 +95,6 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   // --- Login Function ---
   Future<void> _login() async {
     try {
-      print("🔵 Logging in user: ${_emailController.text}");
-
       final credential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -114,17 +105,13 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
 
       if (userDoc.exists) {
         String role = userDoc['role'];
-        print("✅ Logged in successfully as $role");
         _redirectToDashboard(role);
       } else {
         _showSnackBar("User role not found in Firestore.");
       }
     } on FirebaseAuthException catch (e) {
-      print("❌ FirebaseAuthException: ${e.code} - ${e.message}");
       _showSnackBar("Auth Error: ${e.message}");
-    } catch (e, st) {
-      print("❌ General error: $e");
-      print("🪵 Stack trace: $st");
+    } catch (e) {
       _showSnackBar("Unexpected error: $e");
     }
   }
@@ -176,306 +163,332 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
-  // --- Landing Page ---
+  // --- Landing Page with Container ---
   Widget _buildLandingPage(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset("lib/assets/images/systemlogo.jpg", height: 170),
-          const SizedBox(height: 20),
-          Text(
-            'BiliranAlert',
-            style: Theme.of(context)
-                .textTheme
-                .displayLarge
-                ?.copyWith(color: textLight, fontSize: 36),
+    return Center(
+      child: SingleChildScrollView(
+        child: Container(
+          width: 380,
+          margin: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+            ],
           ),
-          const SizedBox(height: 80),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _navigateToPage(1),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: textLight,
-                foregroundColor: primaryDarkBlue,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset("lib/assets/images/systemlogo.jpg", height: 170),
+              const SizedBox(height: 20),
+              Text(
+                'BiliranAlert',
+                style: Theme.of(context)
+                    .textTheme
+                    .displayLarge
+                    ?.copyWith(color: primaryDarkBlue, fontSize: 36),
               ),
-              child: const Text('Login'),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => _navigateToPage(2),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: textLight,
-                side: const BorderSide(color: textLight, width: 2),
-              ),
-              child: const Text('Sign Up'),
-            ),
-          ),
-          const SizedBox(height: 80),
-          TextButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeDashboard()),
-              );
-            },
-            child: Text(
-              'Continue as a guest',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: textLight.withOpacity(0.9),
-                    decoration: TextDecoration.underline,
-                    fontWeight: FontWeight.bold,
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _navigateToPage(1),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentOrange, // same as login/signup
+                    foregroundColor: textLight,
                   ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- Login Page ---
-  Widget _buildLoginPage(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 50),
-          IconButton(
-            onPressed: () => _navigateToPage(0),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const SizedBox(height: 40),
-          Center(
-            child: Text(
-              'Welcome Back!',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .displayLarge
-                  ?.copyWith(color: textLight),
-            ),
-          ),
-          const SizedBox(height: 40),
-          TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              hintText: 'Email Address',
-              prefixIcon: Icon(Icons.email),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-              hintText: 'Password',
-              prefixIcon: Icon(Icons.lock),
-            ),
-          ),
-          const SizedBox(height: 40),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _login,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentOrange,
-                foregroundColor: textLight,
-              ),
-              child: const Text('Login'),
-            ),
-          ),
-          const SizedBox(height: 50),
-          Center(
-            child: TextButton(
-              onPressed: () => _navigateToPage(2),
-              child: const Text(
-                "Don't have an account? Sign Up",
-                style: TextStyle(
-                    color: Colors.white, decoration: TextDecoration.underline),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- Sign Up Page ---
-  Widget _buildSignUpPage(BuildContext context) {
-    final selectedMunicipality = _selectedMunicipality ?? municipalities.keys.first;
-    final barangayList = municipalities[selectedMunicipality] ?? [];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 50),
-          IconButton(
-            onPressed: () => _navigateToPage(0),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const SizedBox(height: 40),
-          Center(
-            child: Text(
-              'Create Your Alert Account',
-              style: Theme.of(context)
-                  .textTheme
-                  .displayLarge
-                  ?.copyWith(color: textLight),
-            ),
-          ),
-          const SizedBox(height: 40),
-
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              hintText: 'Full Name',
-              prefixIcon: Icon(Icons.person),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          TextField(
-            controller: _emailController,
-            decoration: const InputDecoration(
-              hintText: 'Email Address',
-              prefixIcon: Icon(Icons.email),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          TextField(
-            controller: _passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(
-              hintText: 'Password',
-              prefixIcon: Icon(Icons.lock),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          TextField(
-            controller: _contactController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              hintText: 'Contact Number',
-              prefixIcon: Icon(Icons.phone),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          TextField(
-            controller: _addressController,
-            decoration: const InputDecoration(
-              hintText: 'Street or Purok',
-              prefixIcon: Icon(Icons.location_on),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          DropdownButtonFormField<String>(
-            value: _selectedMunicipality,
-            items: municipalities.keys
-                .map((mun) => DropdownMenuItem(value: mun, child: Text(mun)))
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedMunicipality = value!;
-                _selectedBarangay = municipalities[value]!.first;
-              });
-            },
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.map),
-              labelText: "Select Municipality",
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          DropdownButtonFormField<String>(
-            value: _selectedBarangay,
-            items: barangayList
-                .map((brgy) => DropdownMenuItem(value: brgy, child: Text(brgy)))
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedBarangay = value!;
-              });
-            },
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.location_city),
-              labelText: "Select Barangay",
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          DropdownButtonFormField<String>(
-            value: _selectedGender,
-            items: const [
-              DropdownMenuItem(value: "Male", child: Text("Male")),
-              DropdownMenuItem(value: "Female", child: Text("Female")),
-              DropdownMenuItem(value: "Other", child: Text("Other")),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedGender = value!);
-            },
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.wc),
-              labelText: "Select Gender",
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          DropdownButtonFormField<String>(
-            value: _selectedRole,
-            items: const [
-              DropdownMenuItem(value: "admin", child: Text("Admin")),
-              DropdownMenuItem(value: "rescuer", child: Text("Respondents")),
-              DropdownMenuItem(value: "citizen", child: Text("Resident")),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedRole = value!);
-            },
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.security),
-              labelText: "Select Role",
-            ),
-          ),
-          const SizedBox(height: 40),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _signUp,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentOrange,
-                foregroundColor: textLight,
-              ),
-              child: const Text('Sign Up'),
-            ),
-          ),
-          const SizedBox(height: 50),
-
-          Center(
-            child: TextButton(
-              onPressed: () => _navigateToPage(1),
-              child: const Text(
-                "Already have an account? Login",
-                style: TextStyle(
-                  color: Colors.white,
-                  decoration: TextDecoration.underline,
+                  child: const Text('Login'),
                 ),
               ),
-            ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => _navigateToPage(2),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: accentOrange, // same theme color
+                    side: const BorderSide(color: accentOrange, width: 2),
+                  ),
+                  child: const Text('Sign Up'),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeDashboard()),
+                  );
+                },
+                child: Text(
+                  'Continue as a guest',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        // ignore: deprecated_member_use
+                        color: accentOrange.withOpacity(0.9),
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  // --- Login Page (with Container) ---
+  Widget _buildLoginPage(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 380,
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  onPressed: () => _navigateToPage(0),
+                  icon: const Icon(Icons.arrow_back, color: accentOrange),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Welcome Back!',
+                style: TextStyle(
+                    color: accentOrange,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 30),
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  hintText: 'Email Address',
+                  prefixIcon: Icon(Icons.email),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: 'Password',
+                  prefixIcon: Icon(Icons.lock),
+                ),
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentOrange,
+                    foregroundColor: textLight,
+                  ),
+                  child: const Text('Login'),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => _navigateToPage(2),
+                child: Text(
+                  "Don't have an account? Sign Up",
+                  style: TextStyle(color: accentOrange),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Sign Up Page (with Container) ---
+  Widget _buildSignUpPage(BuildContext context) {
+    final selectedMunicipality =
+        _selectedMunicipality ?? municipalities.keys.first;
+    final barangayList = municipalities[selectedMunicipality] ?? [];
+
+    return Center(
+      child: Container(
+        width: 380,
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  onPressed: () => _navigateToPage(0),
+                  icon: const Icon(Icons.arrow_back, color: accentOrange),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Create Your Alert Account',
+                style: TextStyle(
+                    color: accentOrange,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              _buildSignUpFields(barangayList),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignUpFields(List<String> barangayList) {
+    return Column(
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            hintText: 'Full Name',
+            prefixIcon: Icon(Icons.person),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _emailController,
+          decoration: const InputDecoration(
+            hintText: 'Email Address',
+            prefixIcon: Icon(Icons.email),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _passwordController,
+          obscureText: true,
+          decoration: const InputDecoration(
+            hintText: 'Password',
+            prefixIcon: Icon(Icons.lock),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _contactController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            hintText: 'Contact Number',
+            prefixIcon: Icon(Icons.phone),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _addressController,
+          decoration: const InputDecoration(
+            hintText: 'Street or Purok',
+            prefixIcon: Icon(Icons.location_on),
+          ),
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedMunicipality,
+          items: municipalities.keys
+              .map((mun) => DropdownMenuItem(value: mun, child: Text(mun)))
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedMunicipality = value!;
+              _selectedBarangay = municipalities[value]!.first;
+            });
+          },
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.map),
+            labelText: "Select Municipality",
+          ),
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedBarangay,
+          items: barangayList
+              .map((brgy) => DropdownMenuItem(value: brgy, child: Text(brgy)))
+              .toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedBarangay = value!;
+            });
+          },
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.location_city),
+            labelText: "Select Barangay",
+          ),
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedGender,
+          items: const [
+            DropdownMenuItem(value: "Male", child: Text("Male")),
+            DropdownMenuItem(value: "Female", child: Text("Female")),
+            DropdownMenuItem(value: "Other", child: Text("Other")),
+          ],
+          onChanged: (value) {
+            setState(() => _selectedGender = value!);
+          },
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.wc),
+            labelText: "Select Gender",
+          ),
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedRole,
+          items: const [
+            DropdownMenuItem(value: "admin", child: Text("Admin")),
+            DropdownMenuItem(value: "rescuer", child: Text("Respondents")),
+            DropdownMenuItem(value: "citizen", child: Text("Resident")),
+          ],
+          onChanged: (value) {
+            setState(() => _selectedRole = value!);
+          },
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.security),
+            labelText: "Select Role",
+          ),
+        ),
+        const SizedBox(height: 30),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _signUp,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: accentOrange,
+              foregroundColor: textLight,
+            ),
+            child: const Text('Sign Up'),
+          ),
+        ),
+        const SizedBox(height: 20),
+        TextButton(
+          onPressed: () => _navigateToPage(1),
+          child: Text(
+            "Already have an account? Login",
+            style: TextStyle(color: accentOrange),
+          ),
+        ),
+      ],
     );
   }
 

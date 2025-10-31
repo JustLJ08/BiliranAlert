@@ -52,11 +52,7 @@ class BottomNavBar extends StatelessWidget {
                       label: 'Home',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.health_and_safety_rounded),
-                      label: 'Safety',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.contact_emergency_rounded),
+                      icon: Icon(Icons.quick_contacts_dialer_rounded),
                       label: 'Contact',
                     ),
                     BottomNavigationBarItem(

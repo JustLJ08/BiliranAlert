@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:biliran_alert/utils/theme.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -24,7 +25,6 @@ class _ReportScreenState extends State<ReportScreen> {
   bool _isLoading = false;
   bool _isLocating = false;
 
-  /// Cloudinary setup (use your own cloud name & unsigned preset)
   final String cloudinaryUploadUrl =
       "https://api.cloudinary.com/v1_1/dcqlmbxbi/image/upload";
   final String uploadPreset = "biliran_unsigned";
@@ -193,124 +193,156 @@ class _ReportScreenState extends State<ReportScreen> {
                 child: Image.memory(_webImage!,
                     fit: BoxFit.cover, width: double.infinity, height: 200),
               )
-            : const Center(
-                child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)))
+            : const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)))
         : (_imageFile != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.file(_imageFile!,
                     fit: BoxFit.cover, width: double.infinity, height: 200),
               )
-            : const Center(
-                child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)));
+            : const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Report an Incident"),
-        backgroundColor: Colors.orangeAccent,
+        backgroundColor: primaryDarkBlue,
+        centerTitle: true,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primaryDarkBlue, accentOrange],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Upload or Take Photo:",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey),
-                  color: Colors.grey[200],
+          padding: const EdgeInsets.all(20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26.withOpacity(0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
-                child: imagePreview,
-              ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Upload or Take Photo",
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 10),
 
-              const SizedBox(height: 10),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.camera),
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text("Camera"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                    ),
+                Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: primaryDarkBlue.withOpacity(0.3)),
+                    color: Colors.white,
                   ),
-                  const SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text("Gallery"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
+                  child: imagePreview,
+                ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _locationController,
-                      decoration: const InputDecoration(
-                        labelText: "Location",
-                        border: OutlineInputBorder(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text("Camera"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryDarkBlue,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    onPressed: _isLocating ? null : _getCurrentLocation,
-                    icon: _isLocating
-                        ? const CircularProgressIndicator()
-                        : const Icon(Icons.my_location, color: Colors.blue),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text("Gallery"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentOrange,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
 
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _submitReport,
-                  icon: _isLoading
-                      ? const CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2)
-                      : const Icon(Icons.send),
-                  label: Text(_isLoading ? "Submitting..." : "Submit Report"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                const SizedBox(height: 24),
+
+                Text("Incident Location",
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _locationController,
+                        decoration: const InputDecoration(
+                          hintText: "Enter or detect your location",
+                          labelText: "Location",
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    IconButton(
+                      onPressed: _isLocating ? null : _getCurrentLocation,
+                      icon: _isLocating
+                          ? const CircularProgressIndicator()
+                          : const Icon(Icons.my_location, color: primaryDarkBlue),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                Text("Incident Description",
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _descriptionController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    hintText: "Describe the situation...",
+                    labelText: "Description",
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 32),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _submitReport,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.send),
+                    label:
+                        Text(_isLoading ? "Submitting..." : "Submit Report"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryDarkBlue,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
