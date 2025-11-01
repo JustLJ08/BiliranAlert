@@ -4,10 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:biliran_alert/utils/theme.dart';
 import 'package:biliran_alert/utils/gradient_background.dart';
 
-class EmergencyAlertsScreen extends StatelessWidget {
-  const EmergencyAlertsScreen({super.key});
+class ViewReportsScreen extends StatelessWidget {
+  const ViewReportsScreen({super.key});
 
-  // 🔹 Format Firestore Timestamp
+  // Format Firestore Timestamp
   String _formatTimestamp(Timestamp? timestamp) {
     if (timestamp == null) return "Unknown time";
     final dateTime = timestamp.toDate();
@@ -17,49 +17,45 @@ class EmergencyAlertsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // Gradient handles the background
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text(
-          "Emergency Alerts",
+          "Incident Reports",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: primaryDarkBlue,
       ),
-
-      // Gradient background container
       body: GradientBackground(
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('reports')
+              .collection('incidents')
               .orderBy('timestamp', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
-            // 🔄 Loading
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(color: primaryDarkBlue),
               );
             }
 
-            // ⚠️ No data
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const Center(
                 child: Text(
-                  "🚨 No alerts reported yet.",
+                  "🚨 No reports yet.",
                   style: TextStyle(fontSize: 18, color: Colors.white70),
                 ),
               );
             }
 
-            final incidents = snapshot.data!.docs;
+            final reports = snapshot.data!.docs;
 
             return ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: incidents.length,
+              itemCount: reports.length,
               itemBuilder: (context, index) {
-                final incident = incidents[index];
-                final data = incident.data() as Map<String, dynamic>? ?? {};
+                final report = reports[index];
+                final data = report.data() as Map<String, dynamic>? ?? {};
 
                 final imageUrl = data['image_url'] ?? '';
                 final description = data['description'] ?? 'No description';
@@ -67,7 +63,7 @@ class EmergencyAlertsScreen extends StatelessWidget {
                 final timestamp = _formatTimestamp(data['timestamp']);
                 final status = (data['status'] ?? 'pending').toString();
 
-                // 🔹 Status color + icon
+                // Status color & icon
                 late final Color statusColor;
                 late final IconData statusIcon;
 
@@ -106,12 +102,10 @@ class EmergencyAlertsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 🖼️ Image
                       if (imageUrl.isNotEmpty)
                         ClipRRect(
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
+                              top: Radius.circular(16)),
                           child: Image.network(
                             imageUrl,
                             width: double.infinity,
@@ -124,8 +118,7 @@ class EmergencyAlertsScreen extends StatelessWidget {
                                 color: Colors.grey[200],
                                 child: const Center(
                                   child: CircularProgressIndicator(
-                                    color: primaryDarkBlue,
-                                  ),
+                                      color: primaryDarkBlue),
                                 ),
                               );
                             },
@@ -141,8 +134,6 @@ class EmergencyAlertsScreen extends StatelessWidget {
                             },
                           ),
                         ),
-
-                      // 📝 Incident details
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -151,47 +142,34 @@ class EmergencyAlertsScreen extends StatelessWidget {
                             Text(
                               location,
                               style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                                color: primaryDarkBlue,
-                              ),
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryDarkBlue),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               description,
                               style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.black87,
-                              ),
+                                  fontSize: 15, color: Colors.black87),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.access_time_rounded,
+                                    color: Colors.grey, size: 16),
+                                const SizedBox(width: 4),
+                                Text(timestamp,
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Colors.grey)),
+                              ],
                             ),
                             const SizedBox(height: 12),
-
-                            // 🕓 Timestamp + Status tag
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time_rounded,
-                                      color: Colors.grey,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      timestamp,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
-                                  ),
+                                      horizontal: 10, vertical: 5),
                                   decoration: BoxDecoration(
                                     color: statusColor.withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(8),
@@ -199,17 +177,13 @@ class EmergencyAlertsScreen extends StatelessWidget {
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(statusIcon,
-                                          color: statusColor, size: 18),
+                                      Icon(statusIcon, color: statusColor, size: 18),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        status.toUpperCase(),
-                                        style: TextStyle(
-                                          color: statusColor,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
+                                      Text(status.toUpperCase(),
+                                          style: TextStyle(
+                                              color: statusColor,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13)),
                                     ],
                                   ),
                                 ),

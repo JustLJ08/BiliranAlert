@@ -31,7 +31,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   /// Pick image from camera or gallery
   Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
+    final ImagePicker picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
 
     if (pickedFile != null) {
@@ -58,8 +58,9 @@ class _ReportScreenState extends State<ReportScreen> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         await Geolocator.openLocationSettings();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Please enable location services.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enable location services.")),
+        );
         return;
       }
 
@@ -68,29 +69,34 @@ class _ReportScreenState extends State<ReportScreen> {
         permission = await Geolocator.requestPermission();
       }
 
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("Location permission denied.")));
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Location permission denied.")),
+        );
         return;
       }
 
       final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
-      final placemarks =
+
+      List<Placemark> placemarks =
           await placemarkFromCoordinates(position.latitude, position.longitude);
-      final place = placemarks.first;
+      Placemark place = placemarks.first;
 
-      final readableAddress =
+      String readableAddress =
           "${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}";
+      setState(() {
+        _locationController.text = readableAddress;
+      });
 
-      setState(() => _locationController.text = readableAddress);
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("📍 Location detected: $readableAddress")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("📍 Location detected: $readableAddress")),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("❌ Error getting location: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error getting location: $e")),
+      );
     }
 
     setState(() => _isLocating = false);
@@ -102,16 +108,14 @@ class _ReportScreenState extends State<ReportScreen> {
       final request = http.MultipartRequest('POST', Uri.parse(cloudinaryUploadUrl))
         ..fields['upload_preset'] = uploadPreset;
 
-      if (kIsWeb && _webImage != null) {
+      if (kIsWeb) {
         request.files.add(http.MultipartFile.fromBytes(
           'file',
           _webImage!,
           filename: 'report.jpg',
         ));
-      } else if (_imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('file', _imageFile!.path));
       } else {
-        return null;
+        request.files.add(await http.MultipartFile.fromPath('file', _imageFile!.path));
       }
 
       final response = await request.send();
@@ -121,11 +125,11 @@ class _ReportScreenState extends State<ReportScreen> {
         final url = RegExp(r'"secure_url":"([^"]+)"').firstMatch(resBody)?.group(1);
         return url;
       } else {
-        if (kDebugMode) print("Cloudinary upload failed: $resBody");
+        print("Cloudinary upload failed: $resBody");
         return null;
       }
     } catch (e) {
-      if (kDebugMode) print("Cloudinary error: $e");
+      print("Cloudinary error: $e");
       return null;
     }
   }
@@ -135,8 +139,9 @@ class _ReportScreenState extends State<ReportScreen> {
     if (_descriptionController.text.isEmpty ||
         _locationController.text.isEmpty ||
         (_imageFile == null && _webImage == null)) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("⚠️ Please fill out all fields.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("⚠️ Please fill out all fields.")),
+      );
       return;
     }
 
@@ -144,9 +149,11 @@ class _ReportScreenState extends State<ReportScreen> {
 
     try {
       final imageUrl = await _uploadToCloudinary();
+
       if (imageUrl == null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text("❌ Failed to upload image.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Failed to upload image.")),
+        );
         setState(() => _isLoading = false);
         return;
       }
@@ -158,8 +165,9 @@ class _ReportScreenState extends State<ReportScreen> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("✅ Incident Report Submitted!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Incident Report Submitted!")),
+      );
 
       setState(() {
         _descriptionController.clear();
@@ -168,8 +176,9 @@ class _ReportScreenState extends State<ReportScreen> {
         _webImage = null;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("❌ Error submitting report: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Error submitting report: $e")),
+      );
     }
 
     setState(() => _isLoading = false);
@@ -181,23 +190,15 @@ class _ReportScreenState extends State<ReportScreen> {
         ? (_webImage != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.memory(
-                  _webImage!,
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.memory(_webImage!,
+                    fit: BoxFit.cover, width: double.infinity, height: 200),
               )
             : const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)))
         : (_imageFile != null
             ? ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  _imageFile!,
-                  width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.file(_imageFile!,
+                    fit: BoxFit.cover, width: double.infinity, height: 200),
               )
             : const Center(child: Icon(Icons.camera_alt, size: 50, color: Colors.grey)));
 
@@ -206,6 +207,7 @@ class _ReportScreenState extends State<ReportScreen> {
         title: const Text("Report an Incident"),
         backgroundColor: primaryDarkBlue,
         centerTitle: true,
+        elevation: 0,
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -233,8 +235,10 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Upload or Take Photo", style: Theme.of(context).textTheme.headlineMedium),
+                Text("Upload or Take Photo",
+                    style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 10),
+
                 Container(
                   height: 200,
                   width: double.infinity,
@@ -245,7 +249,9 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                   child: imagePreview,
                 ),
+
                 const SizedBox(height: 16),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -253,19 +259,26 @@ class _ReportScreenState extends State<ReportScreen> {
                       onPressed: () => _pickImage(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt),
                       label: const Text("Camera"),
-                      style: ElevatedButton.styleFrom(backgroundColor: primaryDarkBlue),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryDarkBlue,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
                       onPressed: () => _pickImage(ImageSource.gallery),
                       icon: const Icon(Icons.photo_library),
                       label: const Text("Gallery"),
-                      style: ElevatedButton.styleFrom(backgroundColor: accentOrange),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentOrange,
+                      ),
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 24),
-                Text("Incident Location", style: Theme.of(context).textTheme.headlineMedium),
+
+                Text("Incident Location",
+                    style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -287,8 +300,11 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 24),
-                Text("Incident Description", style: Theme.of(context).textTheme.headlineMedium),
+
+                Text("Incident Description",
+                    style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _descriptionController,
@@ -298,7 +314,9 @@ class _ReportScreenState extends State<ReportScreen> {
                     labelText: "Description",
                   ),
                 ),
+
                 const SizedBox(height: 32),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -313,11 +331,13 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
                           )
                         : const Icon(Icons.send),
-                    label: Text(_isLoading ? "Submitting..." : "Submit Report"),
+                    label:
+                        Text(_isLoading ? "Submitting..." : "Submit Report"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryDarkBlue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
                 ),

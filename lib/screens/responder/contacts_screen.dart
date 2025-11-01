@@ -157,6 +157,43 @@ class ContactsScreen extends StatelessWidget {
                 );
               },
             ),
+
+            // ✅ Fade effect at top and bottom
+            IgnorePointer(
+              child: Column(
+                children: [
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withOpacity(0.9),
+                          Colors.white.withOpacity(0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          // ignore: deprecated_member_use
+                          Colors.white.withOpacity(0.9),
+                          // ignore: deprecated_member_use
+                          Colors.white.withOpacity(0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

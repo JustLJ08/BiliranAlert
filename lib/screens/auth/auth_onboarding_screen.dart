@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:biliran_alert/screens/citizen/home_dashboard.dart';
 import 'package:biliran_alert/utils/theme.dart';
 import 'package:biliran_alert/screens/admin/admin_dashboard.dart';
-import 'package:biliran_alert/screens/rescuer/rescuer_dashboard.dart';
+import 'package:biliran_alert/screens/responder/responder_dashboard.dart';
 
 class AuthOnboardingScreen extends StatefulWidget {
   const AuthOnboardingScreen({super.key});
@@ -19,7 +19,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Controllers
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstnameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -28,33 +29,18 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   // Dropdown selections
   String _selectedRole = "citizen";
   String _selectedGender = "Male";
-  String? _selectedMunicipality = "Naval";
-  String? _selectedBarangay = "Agpangi";
+  String _selectedBarangay = "Agpangi";
 
-  final Map<String, List<String>> municipalities = {
-    "Naval": [
-      "Agpangi",
-      "Anislagan",
-      "Atipolo",
-      "Calumpang",
-      "Cabungaan",
-      "Larazabal",
-      "Sabang",
-      "Caray-caray"
-    ],
-    "Almeria": [
-      "Almeria",
-      "Matanggo",
-      "Pulang Bato",
-      "Tabunan",
-      "Lo-ok",
-      "Jamorawon",
-      "Pili",
-      "Talahid",
-      "Caucab"
-    ],
-    "Biliran": ["Bato", "Burabod", "Canila", "Hugpa", "Julita"],
-  };
+  final List<String> barangays = [
+    "Agpangi",
+    "Anislagan",
+    "Atipolo",
+    "Calumpang",
+    "Cabungaan",
+    "Larazabal",
+    "Sabang",
+    "Caray-caray",
+  ];
 
   void _navigateToPage(int index) {
     _pageController.animateToPage(
@@ -72,19 +58,32 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
         password: _passwordController.text.trim(),
       );
 
+      // Determine initial verification & status
+      String verification = _selectedRole == "rescuer" ? "pending" : "verified";
+      String status = _selectedRole == "rescuer" ? "pending" : "approved";
+
       await _firestore.collection("users").doc(credential.user!.uid).set({
-        "name": _nameController.text.trim(),
+        "firstName": _firstnameController.text.trim(),
+        "lastName": _lastnameController.text.trim(),
         "email": _emailController.text.trim(),
         "role": _selectedRole,
         "address": _addressController.text.trim(),
         "contact": _contactController.text.trim(),
         "gender": _selectedGender,
-        "municipality": _selectedMunicipality,
+        "municipality": "Naval", // fixed municipality
         "barangay": _selectedBarangay,
         "createdAt": FieldValue.serverTimestamp(),
+        "status": status,
+        "verification": verification,
       });
 
-      _redirectToDashboard(_selectedRole);
+      if (_selectedRole == "rescuer") {
+        _showSnackBar(
+            "Rescuer account created. Please wait for admin approval.");
+        _navigateToPage(0); // back to landing
+      } else {
+        _redirectToDashboard(_selectedRole);
+      }
     } on FirebaseAuthException catch (e) {
       _showSnackBar("Auth Error: ${e.message}");
     } catch (e) {
@@ -105,6 +104,16 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
 
       if (userDoc.exists) {
         String role = userDoc['role'];
+        String verification = userDoc['verification'] ?? 'verified';
+
+        // Prevent rescuer from logging in if pending
+        if (role == "rescuer" && verification != "verified") {
+          _showSnackBar(
+              "Your account is pending approval. Please wait for admin approval.");
+          await _auth.signOut();
+          return;
+        }
+
         _redirectToDashboard(role);
       } else {
         _showSnackBar("User role not found in Firestore.");
@@ -120,9 +129,9 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   void _redirectToDashboard(String role) {
     Widget destination;
     if (role == "admin") {
-      destination = const AdminDashboard();
+      destination = const AdminDashboard(adminId: '');
     } else if (role == "rescuer") {
-      destination = const RescuerDashboard();
+      destination = const ResponderDashboard(responderId: '');
     } else {
       destination = const HomeDashboard();
     }
@@ -139,6 +148,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
+  // --- UI ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,7 +173,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
-  // --- Landing Page with Container ---
+  // --- Landing Page ---
   Widget _buildLandingPage(BuildContext context) {
     return Center(
       child: SingleChildScrollView(
@@ -175,7 +185,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(20),
             boxShadow: const [
-              BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+              BoxShadow(
+                  color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
             ],
           ),
           child: Column(
@@ -191,45 +202,24 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
                     ?.copyWith(color: primaryDarkBlue, fontSize: 36),
               ),
               const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _navigateToPage(1),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accentOrange, // same as login/signup
-                    foregroundColor: textLight,
-                  ),
-                  child: const Text('Login'),
+              ElevatedButton(
+                onPressed: () => _navigateToPage(1),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentOrange,
+                  foregroundColor: textLight,
+                  minimumSize: const Size(double.infinity, 45),
                 ),
+                child: const Text('Login'),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => _navigateToPage(2),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: accentOrange, // same theme color
-                    side: const BorderSide(color: accentOrange, width: 2),
-                  ),
-                  child: const Text('Sign Up'),
+              OutlinedButton(
+                onPressed: () => _navigateToPage(2),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: accentOrange,
+                  side: const BorderSide(color: accentOrange, width: 2),
+                  minimumSize: const Size(double.infinity, 45),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeDashboard()),
-                  );
-                },
-                child: Text(
-                  'Continue as a guest',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        // ignore: deprecated_member_use
-                        color: accentOrange.withOpacity(0.9),
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
+                child: const Text('Sign Up'),
               ),
             ],
           ),
@@ -238,7 +228,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
-  // --- Login Page (with Container) ---
+  // --- Login Page ---
   Widget _buildLoginPage(BuildContext context) {
     return Center(
       child: Container(
@@ -249,7 +239,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
-            BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+            BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
           ],
         ),
         child: SingleChildScrollView(
@@ -263,7 +254,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
+              const Text(
                 'Welcome Back!',
                 style: TextStyle(
                     color: accentOrange,
@@ -288,21 +279,19 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accentOrange,
-                    foregroundColor: textLight,
-                  ),
-                  child: const Text('Login'),
+              ElevatedButton(
+                onPressed: _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentOrange,
+                  foregroundColor: textLight,
+                  minimumSize: const Size(double.infinity, 45),
                 ),
+                child: const Text('Login'),
               ),
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => _navigateToPage(2),
-                child: Text(
+                child: const Text(
                   "Don't have an account? Sign Up",
                   style: TextStyle(color: accentOrange),
                 ),
@@ -314,12 +303,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
-  // --- Sign Up Page (with Container) ---
+  // --- Sign Up Page ---
   Widget _buildSignUpPage(BuildContext context) {
-    final selectedMunicipality =
-        _selectedMunicipality ?? municipalities.keys.first;
-    final barangayList = municipalities[selectedMunicipality] ?? [];
-
     return Center(
       child: Container(
         width: 380,
@@ -329,7 +314,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(20),
           boxShadow: const [
-            BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
+            BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
           ],
         ),
         child: SingleChildScrollView(
@@ -343,7 +329,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              Text(
+              const Text(
                 'Create Your Alert Account',
                 style: TextStyle(
                     color: accentOrange,
@@ -351,7 +337,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
                     fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              _buildSignUpFields(barangayList),
+              _buildSignUpFields(),
             ],
           ),
         ),
@@ -359,14 +345,22 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
     );
   }
 
-  Widget _buildSignUpFields(List<String> barangayList) {
+  Widget _buildSignUpFields() {
     return Column(
       children: [
         TextField(
-          controller: _nameController,
+          controller: _firstnameController,
           decoration: const InputDecoration(
-            hintText: 'Full Name',
+            hintText: 'First Name',
             prefixIcon: Icon(Icons.person),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _lastnameController,
+          decoration: const InputDecoration(
+            hintText: 'Last Name',
+            prefixIcon: Icon(Icons.person_outline),
           ),
         ),
         const SizedBox(height: 16),
@@ -405,35 +399,14 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _selectedMunicipality,
-          items: municipalities.keys
-              .map((mun) => DropdownMenuItem(value: mun, child: Text(mun)))
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedMunicipality = value!;
-              _selectedBarangay = municipalities[value]!.first;
-            });
-          },
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.map),
-            labelText: "Select Municipality",
-          ),
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
           value: _selectedBarangay,
-          items: barangayList
-              .map((brgy) => DropdownMenuItem(value: brgy, child: Text(brgy)))
+          items: barangays
+              .map((b) => DropdownMenuItem(value: b, child: Text(b)))
               .toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedBarangay = value!;
-            });
-          },
+          onChanged: (value) => setState(() => _selectedBarangay = value!),
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.location_city),
-            labelText: "Select Barangay",
+            labelText: "Select Barangay (Naval)",
           ),
         ),
         const SizedBox(height: 16),
@@ -444,9 +417,7 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
             DropdownMenuItem(value: "Female", child: Text("Female")),
             DropdownMenuItem(value: "Other", child: Text("Other")),
           ],
-          onChanged: (value) {
-            setState(() => _selectedGender = value!);
-          },
+          onChanged: (value) => setState(() => _selectedGender = value!),
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.wc),
             labelText: "Select Gender",
@@ -457,33 +428,29 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
           value: _selectedRole,
           items: const [
             DropdownMenuItem(value: "admin", child: Text("Admin")),
-            DropdownMenuItem(value: "rescuer", child: Text("Respondents")),
+            DropdownMenuItem(value: "rescuer", child: Text("Responder")),
             DropdownMenuItem(value: "citizen", child: Text("Resident")),
           ],
-          onChanged: (value) {
-            setState(() => _selectedRole = value!);
-          },
+          onChanged: (value) => setState(() => _selectedRole = value!),
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.security),
             labelText: "Select Role",
           ),
         ),
         const SizedBox(height: 30),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _signUp,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accentOrange,
-              foregroundColor: textLight,
-            ),
-            child: const Text('Sign Up'),
+        ElevatedButton(
+          onPressed: _signUp,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accentOrange,
+            foregroundColor: textLight,
+            minimumSize: const Size(double.infinity, 45),
           ),
+          child: const Text('Sign Up'),
         ),
         const SizedBox(height: 20),
         TextButton(
           onPressed: () => _navigateToPage(1),
-          child: Text(
+          child: const Text(
             "Already have an account? Login",
             style: TextStyle(color: accentOrange),
           ),
@@ -495,7 +462,8 @@ class _AuthOnboardingScreenState extends State<AuthOnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    _nameController.dispose();
+    _firstnameController.dispose();
+    _lastnameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _addressController.dispose();

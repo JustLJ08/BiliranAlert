@@ -1,42 +1,315 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// Screens
+import 'manage_users_screen.dart';
+import 'report_screen.dart';
+import 'view_reports_screen.dart';
+import 'emergency_alerts_screen.dart';
+import 'about_us_screen.dart';
+import 'first_aid_guide_screen.dart';
+import 'evacuation_centers_screen.dart';
+import 'contacts_screen.dart';
+import 'profile_screen.dart';
+
+// Widgets
+import 'package:biliran_alert/widgets/bottom_nav.dart';
+
+// Theme
 import 'package:biliran_alert/utils/theme.dart';
 
-class AdminDashboard extends StatelessWidget {
-  const AdminDashboard({super.key});
+class AdminDashboard extends StatefulWidget {
+  final String adminId;
+
+  const AdminDashboard({super.key, required this.adminId});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = const [
+    AdminHomeContent(),
+    ContactsScreen(),
+    ProfileScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: primaryDarkBlue,
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        backgroundColor: accentOrange,
-        centerTitle: true,
+      extendBody: true,
+      backgroundColor: Colors.transparent,
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
-      body: Center(
+    );
+  }
+}
+
+class MenuItem {
+  final String title;
+  final String subtitle;
+  final Color color;
+  final IconData icon;
+  final Widget screen;
+  final String? firestoreCollection; // for live badge counts
+
+  MenuItem({
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.icon,
+    required this.screen,
+    this.firestoreCollection,
+  });
+}
+
+class AdminHomeContent extends StatelessWidget {
+  const AdminHomeContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Define menu items in the desired order
+    final List<MenuItem> menuItems = [
+      MenuItem(
+        title: "Emergency Alerts",
+        subtitle: "View active alerts and warnings",
+        color: Colors.redAccent,
+        icon: Icons.warning_amber_rounded,
+        screen: const EmergencyAlertsScreen(),
+        firestoreCollection: 'reports', // live badge
+      ),
+      MenuItem(
+        title: "Reports",
+        subtitle: "View submitted incident reports",
+        color: Colors.deepOrange,
+        icon: Icons.list_alt_rounded,
+        screen: const ViewReportsScreen(),
+        firestoreCollection: 'incidents', // live badge
+      ),
+      MenuItem(
+        title: "Report Incident",
+        subtitle: "Report disasters and emergencies",
+        color: Colors.orangeAccent,
+        icon: Icons.camera_alt,
+        screen: const ReportScreen(),
+      ),
+      MenuItem(
+        title: "Evacuation Centers",
+        subtitle: "Manage evacuation centers",
+        color: Colors.green,
+        icon: Icons.location_on_rounded,
+        screen: const EvacuationCentersScreen(),
+      ),
+      MenuItem(
+        title: "First Aid Guide",
+        subtitle: "View or update guide",
+        color: Colors.purpleAccent,
+        icon: Icons.medical_services_rounded,
+        screen: const FirstAidGuideScreen(),
+      ),
+      MenuItem(
+        title: "Manage Users",
+        subtitle: "Add, edit, or remove users",
+        color: Colors.blueAccent,
+        icon: Icons.group_rounded,
+        screen: const ManageUsersScreen(),
+      ),
+      MenuItem(
+        title: "About Us",
+        subtitle: "Learn more about this app",
+        color: Colors.blueGrey,
+        icon: Icons.info_rounded,
+        screen: const AboutUsScreen(),
+      ),
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryDarkBlue, accentOrange],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.admin_panel_settings, color: Colors.white, size: 100),
             const SizedBox(height: 20),
-            Text(
-              'Welcome, Admin!',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(color: textLight),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentOrange,
-                foregroundColor: textLight,
+            const Text(
+              "DasigAlert Admin",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 26,
               ),
-              child: const Text('Logout'),
             ),
+            const SizedBox(height: 30),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: menuItems.map((item) {
+                    if (item.firestoreCollection != null) {
+                      // Items with live badge
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection(item.firestoreCollection!)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          final int count = snapshot.hasData
+                              ? snapshot.data!.docs.length
+                              : 0;
+                          return Column(
+                            children: [
+                              _buildMenuCard(
+                                context,
+                                color: item.color,
+                                icon: item.icon,
+                                title: item.title,
+                                subtitle: item.subtitle,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => item.screen),
+                                ),
+                                badgeCount: count,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      );
+                    } else {
+                      // Normal items
+                      return Column(
+                        children: [
+                          _buildMenuCard(
+                            context,
+                            color: item.color,
+                            icon: item.icon,
+                            title: item.title,
+                            subtitle: item.subtitle,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => item.screen),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    }
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard(
+    BuildContext context, {
+    required Color color,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    int badgeCount = 0,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, color: Colors.white, size: 36),
+                    if (badgeCount > 0)
+                      Positioned(
+                        right: -6,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Container(
+                            width: 18,
+                            height: 18,
+                            decoration: const BoxDecoration(
+                              color: warningRed,
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              badgeCount > 9 ? "9+" : "$badgeCount",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
           ],
         ),
       ),

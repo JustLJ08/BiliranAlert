@@ -17,18 +17,20 @@ import 'package:biliran_alert/widgets/bottom_nav.dart';
 // Theme
 import 'package:biliran_alert/utils/theme.dart';
 
-class HomeDashboard extends StatefulWidget {
-  const HomeDashboard({super.key});
+class ResponderDashboard extends StatefulWidget {
+  final String responderId;
+
+  const ResponderDashboard({super.key, required this.responderId});
 
   @override
-  State<HomeDashboard> createState() => _HomeDashboardState();
+  State<ResponderDashboard> createState() => _ResponderDashboardState();
 }
 
-class _HomeDashboardState extends State<HomeDashboard> {
+class _ResponderDashboardState extends State<ResponderDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = const [
-    HomeContent(),
+    ResponderHomeContent(),
     ContactsScreen(),
     ProfileScreen(),
   ];
@@ -71,11 +73,12 @@ class MenuItem {
   });
 }
 
-class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+class ResponderHomeContent extends StatelessWidget {
+  const ResponderHomeContent({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Menu items
     final List<MenuItem> menuItems = [
       MenuItem(
         title: "Emergency Alerts",
@@ -137,7 +140,7 @@ class HomeContent extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             const Text(
-              "DasigAlert",
+              "DasigAlert Responder",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -151,7 +154,6 @@ class HomeContent extends StatelessWidget {
                 child: Column(
                   children: menuItems.map((item) {
                     if (item.firestoreCollection != null) {
-                      // Items with live badge
                       return StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection(item.firestoreCollection!)
@@ -180,7 +182,6 @@ class HomeContent extends StatelessWidget {
                         },
                       );
                     } else {
-                      // Normal items
                       return Column(
                         children: [
                           _buildMenuCard(
